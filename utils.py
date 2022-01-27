@@ -1,18 +1,18 @@
 import re
 from transformers import Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor,Wav2Vec2Processor
 
-def clean_batch(batch):
-    batch["sentence"] = re.sub("([^A-Za-zÀ-ú ])", '', batch["sentence"]).lower()
-    batch["sentence"]= re.sub("([ß|þ|ð|æ])",'',batch['sentence'])
+def clean_batch(batch,text_column="sentence"):
+    batch[text_column] = re.sub("([^A-Za-zÀ-ú ])", '', batch[text_column]).lower()
+    batch[text_column]= re.sub("([ß|þ|ð|æ])",'',batch[text_column])
     return batch
 
-def homologate_accents(batch):
-    batch["sentence"]=re.sub("([â|ã|ä|å|à])","a",batch["sentence"])
-    batch["sentence"]=re.sub("([é|ê|ë])","e",batch["sentence"])
-    batch["sentence"]=re.sub("([ì|î|ï])","i",batch["sentence"])
-    batch["sentence"]=re.sub("([ö|õ|ô|ò|ø])","o",batch["sentence"])
-    batch["sentence"]=re.sub("ù","u",batch["sentence"])
-    batch["sentence"]=re.sub("ç","c",batch["sentence"])
+def homologate_accents(batch,text_column="sentence"):
+    batch[text_column]=re.sub("([â|ã|ä|å|à])","a",batch[text_column])
+    batch[text_column]=re.sub("([é|ê|ë])","e",batch[text_column])
+    batch[text_column]=re.sub("([ì|î|ï])","i",batch[text_column])
+    batch[text_column]=re.sub("([ö|õ|ô|ò|ø])","o",batch[text_column])
+    batch[text_column]=re.sub("ù","u",batch[text_column])
+    batch[text_column]=re.sub("ç","c",batch[text_column])
     
     return batch
 

@@ -7,14 +7,10 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 from transformers import TrainingArguments
 from transformers import Trainer
+import argparse
 
-REPO_NAME="jhonparra18/wav2vec2-large-xls-r-300m-spanish-custom"
-
-common_voice_train = load_dataset("common_voice", "es", split="train+validation")
-common_voice_test = load_dataset("common_voice", "es", split="test")
-
-common_voice_train = common_voice_train.remove_columns(["accent", "age", "client_id", "down_votes", "gender", "locale", "segment", "up_votes"])
-common_voice_test = common_voice_test.remove_columns(["accent", "age", "client_id", "down_votes", "gender", "locale", "segment", "up_votes"])
+REPO_NAME_BASE="jhonparra18/wav2vec2-large-xls-r-300m-spanish-custom"
+REPO_OUT="glob-asr/wav2vec2-large-xls-r-300m-spanish-medium"
 
 processor=get_processor()
 
@@ -31,14 +27,6 @@ def prepare_dataset(batch):
 
 
 ##apply it for every audio
-
-common_voice_train = common_voice_train.map(clean_batch)
-common_voice_train = common_voice_train.map(homologate_accents)
-common_voice_test = common_voice_test.map(clean_batch)
-common_voice_test = common_voice_test.map(homologate_accents)
-
-
-
 
 @dataclass
 class DataCollatorCTCWithPadding:
@@ -87,15 +75,6 @@ class DataCollatorCTCWithPadding:
         return batch
 
 
-##preprocessing
-
-##convert to 16000 hz
-common_voice_train = common_voice_train.cast_column("audio", Audio(sampling_rate=16000))
-common_voice_test = common_voice_test.cast_column("audio", Audio(sampling_rate=16000))
-
-
-common_voice_train=common_voice_train.train_test_split(train_size=0.05)['train'] ##uncomment for full training
-
 wer_metric = load_metric("wer")
 data_collator = DataCollatorCTCWithPadding(processor=processor, padding=True)
 
@@ -114,10 +93,28 @@ def compute_metrics(pred):
     return {"wer": wer}
 
 
-def main():
+def train_model(tr:float,tst:float):
+
+
+    common_voice_train = load_dataset("common_voice", "es", split="train+validation").train_test_split(train_size=tr)['train']
+    common_voice_test = load_dataset("common_voice", "es", split="test").train_test_split(train_size=tst)['train']
+
+    common_voice_train = common_voice_train.remove_columns(["accent", "age", "client_id", "down_votes", "gender", "locale", "segment", "up_votes"])
+    common_voice_test = common_voice_test.remove_columns(["accent", "age", "client_id", "down_votes", "gender", "locale", "segment", "up_votes"])
+
+    common_voice_train = common_voice_train.map(clean_batch)
+    common_voice_train = common_voice_train.map(homologate_accents)
+    common_voice_test = common_voice_test.map(clean_batch)
+    common_voice_test = common_voice_test.map(homologate_accents)
+
+    ##preprocessing
+
+    ##convert to 16000 hz
+    common_voice_train = common_voice_train.cast_column("audio", Audio(sampling_rate=16000))
+    common_voice_test = common_voice_test.cast_column("audio", Audio(sampling_rate=16000))
 
     model = Wav2Vec2ForCTC.from_pretrained(
-        REPO_NAME, 
+        REPO_NAME_BASE, 
         attention_dropout=0.0,
         hidden_dropout=0.0,
         feat_proj_dropout=0.0,
@@ -132,7 +129,7 @@ def main():
 
 
     training_args = TrainingArguments(
-    output_dir=REPO_NAME,
+    output_dir=REPO_OUT,
     group_by_length=True,
     per_device_train_batch_size=8,
     gradient_accumulation_steps=2,
@@ -161,8 +158,14 @@ def main():
 
     ###
     trainer.train()
-
     trainer.push_to_hub()
 
-if __name__=="__main__":
-    main()
+if __name__=='__main__':
+    
+    parser = argparse.ArgumentParser(description = 'ASR Parser')
+    parser.add_argument('-tr',type=float,help="train sample ratio",dest="tr_size")
+    parser.add_argument('-ts',type=float,help="test sample ratio",dest="ts_size")
+    args=parser.parse_args()
+    print(args.tr_size*2)
+    train_model(args.tr_size,args.ts_size)
+    

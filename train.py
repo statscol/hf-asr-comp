@@ -9,8 +9,8 @@ from transformers import TrainingArguments
 from transformers import Trainer
 import argparse
 
-REPO_NAME_BASE="jhonparra18/wav2vec2-large-xls-r-300m-spanish-custom"
-REPO_OUT="glob-asr/wav2vec2-large-xls-r-300m-spanish-medium"
+REPO_NAME_BASE="facebook/wav2vec2-xls-r-300m"
+REPO_OUT="jhonparra18/wav2vec2-large-xls-r-300m-spanish-large"
 
 processor=get_processor()
 
@@ -113,6 +113,10 @@ def train_model(tr:float,tst:float):
     common_voice_train = common_voice_train.cast_column("audio", Audio(sampling_rate=16000))
     common_voice_test = common_voice_test.cast_column("audio", Audio(sampling_rate=16000))
 
+    
+    common_voice_train = common_voice_train.map(prepare_dataset, remove_columns=common_voice_train.column_names)
+    common_voice_test = common_voice_test.map(prepare_dataset, remove_columns=common_voice_test.column_names)
+    
     model = Wav2Vec2ForCTC.from_pretrained(
         REPO_NAME_BASE, 
         attention_dropout=0.0,
@@ -131,18 +135,18 @@ def train_model(tr:float,tst:float):
     training_args = TrainingArguments(
     output_dir=REPO_OUT,
     group_by_length=True,
-    per_device_train_batch_size=8,
+    per_device_train_batch_size=12,
     gradient_accumulation_steps=2,
     evaluation_strategy="steps",
     num_train_epochs=10,
     gradient_checkpointing=True,
     fp16=True,
-    save_steps=1000,
+    save_steps=800,
     eval_steps=400,
     logging_steps=400,
     learning_rate=2e-4,
     warmup_steps=300,
-    save_total_limit=25,
+    save_total_limit=30,
     push_to_hub=True,
     )
 
@@ -166,6 +170,5 @@ if __name__=='__main__':
     parser.add_argument('-tr',type=float,help="train sample ratio",dest="tr_size")
     parser.add_argument('-ts',type=float,help="test sample ratio",dest="ts_size")
     args=parser.parse_args()
-    print(args.tr_size*2)
     train_model(args.tr_size,args.ts_size)
     

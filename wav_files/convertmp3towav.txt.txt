@@ -1,0 +1,1 @@
+ffmpeg -i amazonia_calle_13.mp3 -acodec pcm_s16le -ar 44100 wav_files/amazonia_calle_13.wav

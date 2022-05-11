@@ -26,6 +26,8 @@ def prepare_dataset(batch):
     return batch
 
 
+
+
 ##apply it for every audio
 
 @dataclass
@@ -135,12 +137,12 @@ def train_model(tr:float,tst:float):
     training_args = TrainingArguments(
     output_dir=REPO_OUT,
     group_by_length=True,
-    per_device_train_batch_size=12,
+    per_device_train_batch_size=18,
     gradient_accumulation_steps=2,
     evaluation_strategy="steps",
-    num_train_epochs=10,
-    gradient_checkpointing=True,
+    num_train_epochs=20,
     fp16=True,
+    gradient_checkpointing=True,
     save_steps=800,
     eval_steps=400,
     logging_steps=400,
@@ -148,6 +150,8 @@ def train_model(tr:float,tst:float):
     warmup_steps=300,
     save_total_limit=30,
     push_to_hub=True,
+    report_to="wandb",
+    run_name="wav2vec-large-noLM"
     )
 
     trainer = Trainer(
@@ -162,9 +166,10 @@ def train_model(tr:float,tst:float):
 
     ###
     trainer.train()
-    trainer.push_to_hub()
 
 if __name__=='__main__':
+    import wandb
+    wandb.init(project="wav2vec-spanish")
     
     parser = argparse.ArgumentParser(description = 'ASR Parser')
     parser.add_argument('-tr',type=float,help="train sample ratio",dest="tr_size")

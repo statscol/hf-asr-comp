@@ -1,0 +1,8 @@
+ipywidgets
+datasets
+torch
+transformers
+huggingface_hub
+jiwer
+torchaudio -f https://download.pytorch.org/whl/torch_stable.html
+wandb

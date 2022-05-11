@@ -131,7 +131,7 @@ def train_model(tr:float,tst:float):
         vocab_size=len(processor.tokenizer),
     )
 
-    model.freeze_feature_extractor()
+    model.freeze_feature_encoder()
 
 
     training_args = TrainingArguments(
